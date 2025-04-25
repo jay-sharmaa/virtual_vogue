@@ -1,9 +1,7 @@
-import 'package:camera/camera.dart';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:virtualvogue/navigationpages/tryPage.dart';
 import 'package:virtualvogue/utils/homeScroolDecor.dart';
-import 'package:virtualvogue/utils/itemcards.dart';
 import 'package:virtualvogue/utils/popularProducts.dart';
 
 class HomePage extends StatefulWidget {

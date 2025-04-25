@@ -3,6 +3,7 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
+import 'package:flutter_cube/flutter_cube.dart';
 
 class TryPage extends StatefulWidget {
   const TryPage({super.key});
@@ -87,10 +88,6 @@ class _TryPageState extends State<TryPage> {
         _poses = poses;
       });
 
-      for (final pose in poses) {
-        final leftWrist = pose.landmarks[PoseLandmarkType.leftWrist];
-        debugPrint('Left wrist position: ${leftWrist?.x}, ${leftWrist?.y}');
-      }
     } catch (e) {
       debugPrint('Pose detection error: $e');
     }
@@ -124,46 +121,83 @@ class _TryPageState extends State<TryPage> {
     super.dispose();
   }
 
+  int angle = 30;
+  late Object _object;
+
+  void _rotateObject() {
+    setState(() {
+        _object.rotation.y += 30;
+        _object
+            .updateTransform();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
-          if (!_isCameraInitialized)
-            const Center(child: CircularProgressIndicator())
-          else
-            Center(child: CameraPreview(_controller)),
+          // if (!_isCameraInitialized)
+          //   const Center(child: CircularProgressIndicator())
+          // else
+          //   Center(child: CameraPreview(_controller)),
 
-          // Add painter overlay
-          if (_isCameraInitialized)
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final screenSize = Size(
-                  constraints.maxWidth,
-                  constraints.maxHeight,
-                );
-                final imageSize = Size(
-                  _controller.value.previewSize!.height, // note the flip
-                  _controller.value.previewSize!.width,
-                );
+          // if (_isCameraInitialized)
+          //   LayoutBuilder(
+          //     builder: (context, constraints) {
+          //       final screenSize = Size(
+          //         constraints.maxWidth,
+          //         constraints.maxHeight,
+          //       );
+          //       final imageSize = Size(
+          //         _controller.value.previewSize!.height,
+          //         _controller.value.previewSize!.width,
+          //       );
 
-                return CustomPaint(
-                  size: screenSize,
-                  painter: PosePainter(
-                    poses: _poses,
-                    imageSize: imageSize,
-                    screenSize: screenSize,
-                  ),
-                );
-              },
-            ),
+          //       return CustomPaint(
+          //         size: screenSize,
+          //         painter: PosePainter(
+          //           poses: _poses,
+          //           imageSize: imageSize,
+          //           screenSize: screenSize,
+          //         ),
+          //       );
+          //     },
+          //   ),
+          Cube(
+            onSceneCreated: (Scene scene) {
+              scene.world.add(
+                _object = Object(
+                  scale: Vector3.all(5.0),
+                  rotation: Vector3(angle.toDouble(), 0, 0),
+                  position: Vector3(0, 0, 0),
+                  fileName: 'assets/untitled.obj',
+                ),
+              );
+            },
+          ),
 
           Positioned(
             bottom: 32,
             right: MediaQuery.of(context).size.width / 2 - 25,
             child: FloatingActionButton(
-              onPressed: _flipCamera,
+              onPressed: () async {
+                angle += 30;
+                angle %= 90;
+                await _flipCamera();
+              },
+              heroTag: 'switchBtn',
               child: const Icon(Icons.cameraswitch),
+            ),
+          ),
+
+          Positioned(
+            bottom: 32,
+            left: 32,
+            child: FloatingActionButton(
+              onPressed: _rotateObject,
+              heroTag: 'rotateBtn',
+              child: const Icon(Icons.rotate_right),
             ),
           ),
         ],
@@ -210,7 +244,6 @@ class PosePainter extends CustomPainter {
       });
 
       final connections = [
-        // Example of body parts to connect with lines:
         [11, 13], // Left Shoulder -> Left Elbow
         [13, 15], // Left Elbow -> Left Wrist
         [12, 14], // Right Shoulder -> Right Elbow
@@ -222,7 +255,6 @@ class PosePainter extends CustomPainter {
         [25, 27], // Left Knee -> Left Ankle
         [24, 26], // Right Hip -> Right Knee
         [26, 28], // Right Knee -> Right Ankle
-        // Add any other lines you wish to draw
       ];
 
       for (final pair in connections) {
@@ -235,7 +267,6 @@ class PosePainter extends CustomPainter {
           double endX = (end.x / imageSize.width) * screenSize.width;
           double endY = (end.y / imageSize.height) * screenSize.height;
 
-          // Apply rotation
           final dxStart = startX - centerX;
           final dyStart = startY - centerY;
           final rotatedStartX = -dyStart + centerX - 100;
@@ -246,7 +277,6 @@ class PosePainter extends CustomPainter {
           final rotatedEndX = -dyEnd + centerX - 100;
           final rotatedEndY = dxEnd + centerY - 80;
 
-          // Draw the line
           canvas.drawLine(
             Offset(rotatedStartX, rotatedStartY),
             Offset(rotatedEndX, rotatedEndY),
@@ -255,7 +285,6 @@ class PosePainter extends CustomPainter {
         }
       }
 
-      // Now, draw the individual points
       for (final pose in poses) {
         final landmarks = List<PoseLandmark?>.filled(
           PoseLandmarkType.values.length,

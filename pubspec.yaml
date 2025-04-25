@@ -39,6 +39,8 @@ dependencies:
   google_mlkit_pose_detection: ^0.14.0
   path_provider: ^2.0.0
   google_fonts: ^6.1.0
+  flutter_3d_controller: ^2.2.0
+  flutter_cube: ^0.1.1
 
 dev_dependencies:
   flutter_test:
@@ -68,6 +70,8 @@ flutter:
     - assets/shirt1.png
     - assets/shirt2.png
     - assets/tshirt1.png
+    - assets/untitled.obj
+    - assets/shirt.mtl
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
