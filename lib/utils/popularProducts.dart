@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:virtualvogue/utils/itemcards.dart';
 
-Widget PopularProducts(BuildContext context) {
+Widget PopularProducts(BuildContext context, VoidCallback onAddToCart) {
   return Container(
     color: const Color(0xFFF0EDE6),
     child: ListView(
@@ -10,31 +10,30 @@ Widget PopularProducts(BuildContext context) {
       padding: const EdgeInsets.symmetric(vertical: 16),
       children: [
         faceWashAdWidget(
-          title: "Men's organic face wash",
-          subtitle: "Different titles",
+          title: "Men's Organic T-Shirt",
+          subtitle: "Breathable cotton for all-day comfort",
           price: "\$49",
           context: context,
-          name: 'assets/shirt1.png'
+          name: 'assets/shirt1.png',
+          onAddToCart: onAddToCart,
         ),
-        SizedBox(
-          height: 32,
-        ),
+        SizedBox(height: 32),
         faceWashAdWidget(
-          title: "Radiant Face Elixir",
-          subtitle: "Glow up kit",
+          title: "Slim Fit Jeans",
+          subtitle: "Stylish and Comfortable",
           price: "\$59",
           context: context,
-          name: 'assets/shirt2.png'
+          name: 'assets/mens_jeans.png',
+          onAddToCart: onAddToCart,
         ),
-        SizedBox(
-          height: 32,
-        ),
+        SizedBox(height: 32),
         faceWashAdWidget(
-          title: "Hydrating Mist",
-          subtitle: "Soothing hydration",
+          title: "Casual Jacket",
+          subtitle: "Lightweight and Trendy",
           price: "\$39",
           context: context,
-          name: 'assets/tshirt1.png'
+          name: 'assets/mens_jacket.png',
+          onAddToCart: onAddToCart,
         ),
       ],
     ),

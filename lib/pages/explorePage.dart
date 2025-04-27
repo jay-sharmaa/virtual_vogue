@@ -1,21 +1,151 @@
 import 'package:flutter/material.dart';
 
-class ExplorePage extends StatelessWidget {
+class ExplorePage extends StatefulWidget {
   const ExplorePage({super.key});
 
   @override
+  State<ExplorePage> createState() => _ExplorePageState();
+}
+
+class _ExplorePageState extends State<ExplorePage> {
+  int selectedIndex = 0;
+  String searchQuery = '';
+
+  final List<String> tabs = [
+    "Men",
+    "Women",
+    "New offers",
+    "Popular",
+  ];
+
+  final Map<String, List<ProductData>> categorizedProducts = {
+    "Men": [
+      ProductData(name: "Men's Hoodie", price: "\$60.00", path: 'assets/mens_hoodie.png'),
+      ProductData(
+        name: "Men's Shirt",
+        price: "\$45.00",
+        path: 'assets/shirt1.png'
+      ),
+      ProductData(
+        name: "Men's T-Shirt",
+        price: "\$25.00",
+        path: 'assets/mens_tshirt.png'
+      ),
+      ProductData(name: "Men's Jeans", price: "\$70.00", path: 'assets/mens_jeans.png'),
+      ProductData(name: "Men's Jacket", price: "\$90.00", path: 'assets/mens_jacket.png'),
+      ProductData(
+        name: "Men's T-shirt",
+        price: "\$100.00",
+        path: 'assets/tshirt1.png'
+      ),
+    ],
+    "Women": [
+      ProductData(
+        name: "Women's White Shirt",
+        price: "\$40.00",
+        path: 'assets/womens_white_shirt.png'
+      ),
+      ProductData(
+        name: "Women's Purple Shirt",
+        price: "\$70.00",
+        path: 'assets/womens_purple_shirt.png'
+      ),
+      ProductData(
+        name: "Women's Jeans",
+        price: "\$55.00",
+        path: 'assets/womens_jeans.png'
+      ),
+      ProductData(
+        name: "Women's Yellow Jacket",
+        price: "\$75.00",
+        path: 'assets/womens_yellow_jacket.png'
+      ),
+      ProductData(
+        name: "Women's Jacket",
+        price: "\$100.00",
+        path: 'assets/womens_black_jacket.png'
+      ),
+      ProductData(name: "Women's Hoodie", price: "\$60.00", path: 'assets/womens_hoodie.png'),
+    ],
+    "New offers": [
+      ProductData(
+        name: "Men's Shirt",
+        price: "\$45.00",
+        path: 'assets/shirt1.png'
+      ),
+      ProductData(
+        name: "Women's Jacket",
+        price: "\$100.00",
+        path: 'assets/womens_black_jacket.png'
+      ),
+      ProductData(
+        name: "Men's T-shirt",
+        price: "\$100.00",
+        path: 'assets/tshirt1.png'
+      ),
+      ProductData(
+        name: "Women's Jeans",
+        price: "\$55.00",
+        path: 'assets/womens_jeans.png'
+      ),
+      ProductData(
+        name: "Women's White Shirt",
+        price: "\$40.00",
+        path: 'assets/womens_white_shirt.png'
+      ),
+    ],
+    "Popular": [
+      ProductData(
+        name: "Women's White Shirt",
+        price: "\$40.00",
+        path: 'assets/womens_white_shirt.png'
+      ),
+      ProductData(
+        name: "Women's Yellow Jacket",
+        price: "\$75.00",
+        path: 'assets/womens_yellow_jacket.png'
+      ),
+      ProductData(name: "Men's Jeans", price: "\$70.00", path: 'assets/mens_jeans.png'),
+      ProductData(name: "Men's Jacket", price: "\$90.00", path: 'assets/mens_jacket.png'),
+      ProductData(
+        name: "Men's Shirt",
+        price: "\$45.00",
+        path: 'assets/shirt1.png'
+      ),
+      ProductData(name: "Women's Hoodie", price: "\$60.00", path: 'assets/womens_hoodie.png'),
+    ],
+  };
+
+  @override
   Widget build(BuildContext context) {
+    final selectedTab = tabs[selectedIndex];
+
+    final List<ProductData> products =
+        categorizedProducts[selectedTab]!
+            .where(
+              (product) => product.name.toLowerCase().contains(
+                searchQuery.toLowerCase(),
+              ),
+            )
+            .toList();
+
     return Scaffold(
       backgroundColor: const Color(0xFFF0EDE6),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            // Top Bar
+            // Search bar
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: const [
-                SearchBarWidget(),
+              children: [
+                SearchBarWidget(
+                  onChanged: (value) {
+                    setState(() {
+                      searchQuery = value;
+                    });
+                  },
+                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -23,39 +153,32 @@ class ExplorePage extends StatelessWidget {
             // Tabs
             SizedBox(
               height: 40,
-              child: ListView(
+              child: ListView.builder(
                 scrollDirection: Axis.horizontal,
-                children: const [
-                  TabChip(label: "Men", selected: true),
-                  TabChip(label: "Women"),
-                  TabChip(label: "Children"),
-                  TabChip(label: "New offers"),
-                  TabChip(label: "Popular"),
-                ],
+                itemCount: tabs.length,
+                itemBuilder: (context, index) {
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        selectedIndex = index;
+                      });
+                    },
+                    child: TabChip(
+                      label: tabs[index],
+                      selected: selectedIndex == index,
+                    ),
+                  );
+                },
               ),
             ),
             const SizedBox(height: 24),
 
-            // New Arrivals
-            const SectionHeader(title: "New arrival"),
+            SectionHeader(title: selectedTab),
             const SizedBox(height: 12),
-            ProductRow(
-              products: const [
-                ProductData(name: "Nike ACG", price: "\$250.50", color: Colors.purple),
-                ProductData(name: "Solo Swoosh", price: "\$150.20", color: Colors.blue),
-              ],
-            ),
-            const SizedBox(height: 24),
 
-            // Popular
-            const SectionHeader(title: "Popular"),
-            const SizedBox(height: 12),
-            ProductRow(
-              products: const [
-                ProductData(name: "Men's Fleece Pullover", price: "\$180.00", color: Colors.pink),
-                ProductData(name: "Nike Therma-FIT ADV", price: "\$185.00", color: Colors.green),
-              ],
-            ),
+            products.isEmpty
+                ? const Center(child: Text("No results found."))
+                : ProductRow(products: products),
           ],
         ),
       ),
@@ -73,12 +196,20 @@ class TabChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(right: 12),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 14,
-          fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-          color: selected ? Colors.black : Colors.grey[600],
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? Colors.black : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: selected ? Colors.black : Colors.grey),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+            color: selected ? Colors.white : Colors.black,
+          ),
         ),
       ),
     );
@@ -115,15 +246,16 @@ class ProductRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: products.map((product) {
-        return Expanded(
-          child: Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: ProductCard(data: product),
-          ),
-        );
-      }).toList(),
+    return Wrap(
+      spacing: 12,
+      runSpacing: 16,
+      children:
+          products.map((product) {
+            return SizedBox(
+              width: MediaQuery.of(context).size.width / 2 - 24,
+              child: ProductCard(data: product),
+            );
+          }).toList(),
     );
   }
 }
@@ -131,12 +263,12 @@ class ProductRow extends StatelessWidget {
 class ProductData {
   final String name;
   final String price;
-  final Color color;
+  final String path;
 
   const ProductData({
     required this.name,
     required this.price,
-    required this.color,
+    required this.path,
   });
 }
 
@@ -150,18 +282,13 @@ class ProductCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Product Image Placeholder
         Container(
           height: 140,
           decoration: BoxDecoration(
-            color: data.color,
             borderRadius: BorderRadius.circular(12),
           ),
           alignment: Alignment.topRight,
-          child: const Padding(
-            padding: EdgeInsets.all(8.0),
-            child: Icon(Icons.favorite_border),
-          ),
+          child: Image.asset(data.path)
         ),
         const SizedBox(height: 8),
         Text(
@@ -192,7 +319,7 @@ class SearchBarWidget extends StatelessWidget {
         controller: controller,
         onChanged: onChanged,
         decoration: InputDecoration(
-          hintText: 'Search',
+          hintText: 'Search clothes...',
           prefixIcon: const Icon(Icons.search),
           filled: true,
           fillColor: Colors.grey[200],

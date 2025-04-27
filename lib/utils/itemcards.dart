@@ -1,34 +1,15 @@
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:virtualvogue/main.dart';
 import 'package:virtualvogue/navigationpages/tryPage.dart';
-
-class Itemcards extends StatefulWidget {
-  const Itemcards({super.key});
-
-  @override
-  State<Itemcards> createState() => _ItemcardsState();
-}
-
-class _ItemcardsState extends State<Itemcards> {
-  @override
-  Widget build(BuildContext context) {
-    return faceWashAdWidget(
-      title: 'Name',
-      subtitle: 'Sub Name',
-      price: '\$49',
-      context: context,
-      name: 'assets/shirt1.png'
-    );
-  }
-}
 
 Widget faceWashAdWidget({
   required String title,
   required String subtitle,
   required String price,
   required BuildContext context,
-  required String name
+  required String name,
+  required VoidCallback onAddToCart,
 }) {
   // Generate a unique hero tag based on the product title
   final heroTag = 'product-${title.hashCode}';
@@ -44,6 +25,8 @@ Widget faceWashAdWidget({
               title: title,
               subtitle: subtitle,
               price: price,
+              onAddToCart: onAddToCart,
+              name: name,
             );
           },
         ),
@@ -61,7 +44,7 @@ Widget faceWashAdWidget({
               height: 600,
               width: double.infinity,
               decoration: BoxDecoration(color: Colors.amber),
-              child: Image.asset(name)
+              child: Image.asset(name),
             ),
           ),
           Container(
@@ -123,6 +106,8 @@ class ProductPage extends StatelessWidget {
   final String title;
   final String subtitle;
   final String price;
+  final String name;
+  final VoidCallback onAddToCart;
 
   const ProductPage({
     super.key,
@@ -130,6 +115,8 @@ class ProductPage extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.price,
+    required this.onAddToCart,
+    required this.name,
   });
 
   @override
@@ -140,7 +127,9 @@ class ProductPage extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
+            // Top bar
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -163,8 +152,8 @@ class ProductPage extends StatelessWidget {
                     CircleAvatar(
                       radius: 14,
                       backgroundColor: Colors.black,
-                      child: const Text(
-                        '04',
+                      child: Text(
+                        "0$cartItemCount", // You can pass cartItemCount as a parameter for dynamic count
                         style: TextStyle(color: Colors.white, fontSize: 12),
                       ),
                     ),
@@ -172,20 +161,26 @@ class ProductPage extends StatelessWidget {
                 ),
               ],
             ),
+
             const SizedBox(height: 30),
 
+            // Product image
             Hero(
               tag: heroTag,
-              child: Container(
-                height: 180,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(16),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Image.asset(
+                  name,
+                  height: 380,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
                 ),
               ),
             ),
+
             const SizedBox(height: 30),
 
+            // Title and price section
             Container(
               padding: const EdgeInsets.all(16),
               color: Colors.black,
@@ -210,6 +205,7 @@ class ProductPage extends StatelessWidget {
                 ],
               ),
             ),
+
             const SizedBox(height: 16),
 
             // Ratings and Reviews
@@ -229,8 +225,10 @@ class ProductPage extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 20),
 
+            const SizedBox(height: 10),
+
+            // Description
             ShaderMask(
               shaderCallback: (Rect bounds) {
                 return const LinearGradient(
@@ -248,54 +246,58 @@ class ProductPage extends StatelessWidget {
                 overflow: TextOverflow.clip,
               ),
             ),
-            const Spacer(),
-            Row(
-              children: [
-                SizedBox(
-                  width: 299,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      backgroundColor: Colors.black,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                    onPressed: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context){
-                        return TryPage();
-                      }));
-                    },
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        Text(
-                          'Try',
-                          style: TextStyle(color: Colors.white, fontSize: 16),
+
+            const SizedBox(height: 8), // Reduced spacing instead of Spacer()
+
+            // Bottom buttons
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 299,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        backgroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(4),
                         ),
-                        SizedBox(width: 10),
-                      ],
+                      ),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => TryPage(name: name),
+                          ),
+                        );
+                      },
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Text(
+                            'Try',
+                            style: TextStyle(color: Colors.white, fontSize: 16),
+                          ),
+                          SizedBox(width: 10, height: 0,),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                SizedBox(width: 8),
-                ElevatedButton(
+                  const SizedBox(width: 8),
+                  ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
                       backgroundColor: Colors.black,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
-                    onPressed: () {},
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        Icon(Icons.shop, color: Colors.white, size: 24,),
-                      ],
-                    ),
+                    onPressed: onAddToCart,
+                    child: const Icon(Icons.shop, color: Colors.white, size: 24),
                   ),
-              ],
+                ],
+              ),
             ),
           ],
         ),

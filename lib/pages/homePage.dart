@@ -5,8 +5,9 @@ import 'package:virtualvogue/utils/homeScroolDecor.dart';
 import 'package:virtualvogue/utils/popularProducts.dart';
 
 class HomePage extends StatefulWidget {
+  final VoidCallback onAddToCart;
 
-  const HomePage({super.key});
+  const HomePage({super.key, required this.onAddToCart});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -28,7 +29,7 @@ class _HomePageState extends State<HomePage> {
                 ),
           ),
         ),
-        PopularProducts(context)
+        PopularProducts(context, widget.onAddToCart)
       ],
     );
   }

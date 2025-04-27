@@ -41,6 +41,9 @@ dependencies:
   google_fonts: ^6.1.0
   flutter_3d_controller: ^2.2.0
   flutter_cube: ^0.1.1
+  mobile_scanner: ^6.0.10
+  fluttertoast: ^8.2.12
+  speech_to_text: ^7.0.0
 
 dev_dependencies:
   flutter_test:
@@ -52,6 +55,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.13.1
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -66,12 +70,29 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
-    - assets/your_image.jpg
     - assets/shirt1.png
     - assets/shirt2.png
     - assets/tshirt1.png
-    - assets/untitled.obj
+    - assets/black_checks.png
+    - assets/complete_white.png
+    - assets/pinkish_white.png
+    - assets/mens_hoodie.png
+    - assets/mens_jeans.png
+    - assets/mens_tshirt.png
+    - assets/mens_jacket.png
+    - assets/womens_black_jacket.png
+    - assets/womens_hoodie.png
+    - assets/womens_jeans.png
+    - assets/womens_purple_shirt.png
+    - assets/womens_white_shirt.png
+    - assets/womens_yellow_jacket.png
     - assets/shirt.mtl
+    - assets/shirt.obj
+    - assets/pants.obj
+    - assets/shirt2.mtl
+    - assets/women_shirt.obj
+    - assets/shirt2.obj
+
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
@@ -99,3 +120,7 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon.png"

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -6,7 +7,8 @@ import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 import 'package:flutter_cube/flutter_cube.dart';
 
 class TryPage extends StatefulWidget {
-  const TryPage({super.key});
+  final String name;
+  const TryPage({super.key, required this.name});
 
   @override
   State<TryPage> createState() => _TryPageState();
@@ -23,20 +25,28 @@ class _TryPageState extends State<TryPage> {
   Timer? _poseTimer;
   bool _isProcessing = false;
 
+  String fileName = "assets/shirt.obj";
+  bool isPants = false;
+
   @override
   void initState() {
     super.initState();
     _poseDetector = PoseDetector(
       options: PoseDetectorOptions(mode: PoseDetectionMode.stream),
     );
+    if (widget.name == "assets/mens_jeans.png") {
+      fileName = "assets/pants.obj";
+      isPants = true;
+    }
     _initEverything();
+    print(widget.name);
   }
 
   Future<void> _initEverything() async {
     try {
       cameras = await availableCameras();
       await _initializeCamera(_cameraIndex);
-
+      configueObj();
       _poseTimer = Timer.periodic(const Duration(seconds: 3), (_) {
         if (_latestImage != null && !_isProcessing) {
           _processCameraImage(_latestImage!);
@@ -68,13 +78,6 @@ class _TryPageState extends State<TryPage> {
     }
   }
 
-  Future<void> _flipCamera() async {
-    setState(() => _isCameraInitialized = false);
-    await _controller.dispose();
-    _cameraIndex = (_cameraIndex + 1) % cameras.length;
-    await _initializeCamera(_cameraIndex);
-  }
-
   List<Pose> _poses = [];
 
   Future<void> _processCameraImage(CameraImage image) async {
@@ -88,6 +91,7 @@ class _TryPageState extends State<TryPage> {
         _poses = poses;
       });
 
+      _checkDirectionAndRotate();
     } catch (e) {
       debugPrint('Pose detection error: $e');
     }
@@ -124,11 +128,143 @@ class _TryPageState extends State<TryPage> {
   int angle = 30;
   late Object _object;
 
-  void _rotateObject() {
+  void _rotateObject(double angle) {
     setState(() {
-        _object.rotation.y += 30;
-        _object
-            .updateTransform();
+      _object.rotation.z = 0;
+      _object.rotation.x = 0;
+      _object.rotation.y = angle;
+      _object.updateTransform();
+    });
+  }
+
+  void _rotateObjectRight(double angle) {
+    setState(() {
+      _object.rotation.z = 0;
+      _object.rotation.x = 0;
+      _object.rotation.y += angle;
+      _object.updateTransform();
+    });
+  }
+
+  void configueObj() {
+    setState(() {
+      _object.rotation.x = 0;
+      _object.rotation.y = 0;
+      _object.updateTransform();
+    });
+  }
+
+  void _checkDirectionAndRotate() {
+    for (final pose in _poses) {
+      final landmarks = List<PoseLandmark?>.filled(
+        PoseLandmarkType.values.length,
+        null,
+      );
+      pose.landmarks.forEach((type, landmark) {
+        landmarks[type.index] = landmark;
+      });
+
+      // === Shoulder Angle Logic ===
+      final leftShoulder = landmarks[11];
+      final rightShoulder = landmarks[12];
+      final rightHip = landmarks[24];
+      final rightKnee = landmarks[26];
+      final rightAnkle = landmarks[28];
+
+      if (leftShoulder != null && rightShoulder != null) {
+        final dx = rightShoulder.x - leftShoulder.x;
+        final dy = rightShoulder.y - leftShoulder.y;
+        final angleRad = atan2(dy, dx);
+        final angleDeg = angleRad * (180 / pi);
+        final absAngle = angleDeg.abs();
+        final angleDelta = angleDeg - 85;
+
+        print("Angle: $angleDeg");
+
+        if (absAngle >= 85 && absAngle <= 95) {
+          print("Facing forward");
+          _rotateObject(angleDelta);
+        } else if (absAngle > 65 && absAngle < 85) {
+          print("Turning right");
+          _rotateObject(angleDelta);
+        } else if (absAngle > 95 && absAngle < 110) {
+          print("Turning left");
+          _rotateObject(angleDelta);
+        }
+      }
+
+      // === Scale Object based on item type ===
+      if (isPants) {
+        // For pants, use leg position only (hip to ankle)
+        if (rightHip != null && rightAnkle != null) {
+          // final dx = rightHip.x - rightAnkle.x;
+          // final dy = rightHip.y - rightAnkle.y;
+          // final dz = rightHip.z - rightAnkle.z;
+          // final legLength = sqrt(dx * dx + dy * dy + dz * dz);
+
+          // Skip scaling
+          _updatePantsPosition(rightHip, rightAnkle);
+        }
+      } else {
+        // For shirts, use torso length (shoulder to hip)
+        if (rightShoulder != null && rightHip != null) {
+          final dx = rightShoulder.x - rightHip.x;
+          final dy = rightShoulder.y - rightHip.y;
+          final dz = rightShoulder.z - rightHip.z;
+          final torsoLength = sqrt(dx * dx + dy * dy + dz * dz);
+
+          print("Shoulder-to-Hip height: $torsoLength");
+          _scaleObject(torsoLength);
+
+          // Position the shirt using shoulder and hip
+          _updateShirtPosition(rightShoulder, rightHip);
+        }
+      }
+    }
+  }
+
+  void _scaleObject(double bodyPartLength) {
+    // Use the same multiplication factor for both shirt and pants
+    final normalizedScale =
+        bodyPartLength * 0.03; // Adjust multiplier as needed
+
+    setState(() {
+      _object.scale.setValues(
+        normalizedScale,
+        normalizedScale,
+        normalizedScale,
+      );
+      _object.updateTransform();
+    });
+  }
+
+  void _updateShirtPosition(PoseLandmark shoulder, PoseLandmark hip) {
+    final midX = (shoulder.x + hip.x) / 2 - 100;
+    final midY = (shoulder.y + hip.y) / 2;
+    final midZ = (shoulder.z + hip.z) / 2 - 20;
+
+    setState(() {
+      _object.position.setValues(
+        (midX - 180) * 0.02,
+        -(midY - 320) * 0.02,
+        -midZ * 0.1,
+      );
+      _object.updateTransform();
+    });
+  }
+
+  void _updatePantsPosition(PoseLandmark hip, PoseLandmark ankle) {
+    final midX = (hip.x + ankle.x) / 2 - 100;
+    final midY = (hip.y + ankle.y) / 2;
+    final midZ = (hip.z + ankle.z) / 2 - 20;
+
+    setState(() {
+      _object.position.setValues(
+        (midX - 180) * 0.02,
+        -(midY - 320) * 0.02,
+        -midZ * 0.1,
+      );
+      _object.updateTransform();
     });
   }
 
@@ -137,33 +273,34 @@ class _TryPageState extends State<TryPage> {
     return Scaffold(
       body: Stack(
         children: [
-          // if (!_isCameraInitialized)
-          //   const Center(child: CircularProgressIndicator())
-          // else
-          //   Center(child: CameraPreview(_controller)),
+          if (!_isCameraInitialized)
+            const Center(child: CircularProgressIndicator())
+          else
+            Center(child: CameraPreview(_controller)),
 
-          // if (_isCameraInitialized)
-          //   LayoutBuilder(
-          //     builder: (context, constraints) {
-          //       final screenSize = Size(
-          //         constraints.maxWidth,
-          //         constraints.maxHeight,
-          //       );
-          //       final imageSize = Size(
-          //         _controller.value.previewSize!.height,
-          //         _controller.value.previewSize!.width,
-          //       );
+          if (_isCameraInitialized)
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final screenSize = Size(
+                  constraints.maxWidth,
+                  constraints.maxHeight,
+                );
+                final imageSize = Size(
+                  _controller.value.previewSize!.height,
+                  _controller.value.previewSize!.width,
+                );
 
-          //       return CustomPaint(
-          //         size: screenSize,
-          //         painter: PosePainter(
-          //           poses: _poses,
-          //           imageSize: imageSize,
-          //           screenSize: screenSize,
-          //         ),
-          //       );
-          //     },
-          //   ),
+                return CustomPaint(
+                  size: screenSize,
+                  painter: PosePainter(
+                    poses: _poses,
+                    imageSize: imageSize,
+                    screenSize: screenSize,
+                  ),
+                );
+              },
+            ),
+
           Cube(
             onSceneCreated: (Scene scene) {
               scene.world.add(
@@ -171,33 +308,30 @@ class _TryPageState extends State<TryPage> {
                   scale: Vector3.all(5.0),
                   rotation: Vector3(angle.toDouble(), 0, 0),
                   position: Vector3(0, 0, 0),
-                  fileName: 'assets/untitled.obj',
+                  fileName: fileName,
                 ),
               );
             },
           ),
-
           Positioned(
             bottom: 32,
-            right: MediaQuery.of(context).size.width / 2 - 25,
+            right: 20,
             child: FloatingActionButton(
-              onPressed: () async {
-                angle += 30;
-                angle %= 90;
-                await _flipCamera();
+              onPressed: () {
+                _rotateObjectRight(10);
               },
-              heroTag: 'switchBtn',
-              child: const Icon(Icons.cameraswitch),
+              child: const Icon(Icons.arrow_right),
             ),
           ),
 
           Positioned(
             bottom: 32,
-            left: 32,
+            right: 325,
             child: FloatingActionButton(
-              onPressed: _rotateObject,
-              heroTag: 'rotateBtn',
-              child: const Icon(Icons.rotate_right),
+              onPressed: () {
+                _rotateObjectRight(-10);
+              },
+              child: const Icon(Icons.arrow_left),
             ),
           ),
         ],
@@ -243,18 +377,14 @@ class PosePainter extends CustomPainter {
         landmarks[type.index] = landmark;
       });
 
+      // === Draw bones/lines ===
       final connections = [
-        [11, 13], // Left Shoulder -> Left Elbow
-        [13, 15], // Left Elbow -> Left Wrist
-        [12, 14], // Right Shoulder -> Right Elbow
-        [14, 16], // Right Elbow -> Right Wrist
-        [11, 12], // Left Shoulder -> Right Shoulder
-        [12, 24],
-        [11, 23],
-        [23, 25], // Left Hip -> Left Knee
-        [25, 27], // Left Knee -> Left Ankle
-        [24, 26], // Right Hip -> Right Knee
-        [26, 28], // Right Knee -> Right Ankle
+        [11, 13], [13, 15], // Left shoulder -> elbow -> wrist
+        [12, 14], [14, 16], // Right shoulder -> elbow -> wrist
+        [11, 12], // Left shoulder -> Right shoulder
+        [12, 24], [11, 23], // Right shoulder -> Hip -> Left hip
+        [23, 25], [25, 27], // Left Hip -> Knee -> Ankle
+        [24, 26], [26, 28], // Right Hip -> Knee -> Ankle
       ];
 
       for (final pair in connections) {
@@ -263,7 +393,6 @@ class PosePainter extends CustomPainter {
         if (start != null && end != null) {
           double startX = (start.x / imageSize.width) * screenSize.width;
           double startY = (start.y / imageSize.height) * screenSize.height;
-
           double endX = (end.x / imageSize.width) * screenSize.width;
           double endY = (end.y / imageSize.height) * screenSize.height;
 
@@ -285,40 +414,31 @@ class PosePainter extends CustomPainter {
         }
       }
 
-      for (final pose in poses) {
-        final landmarks = List<PoseLandmark?>.filled(
-          PoseLandmarkType.values.length,
-          null,
-        );
-        pose.landmarks.forEach((type, landmark) {
-          landmarks[type.index] = landmark;
-        });
+      // === Draw points ===
+      for (int index = 11; index < 29; index++) {
+        final landmark = landmarks[index];
+        if (landmark == null) continue;
 
-        for (int index = 11; index < 29; index++) {
-          final landmark = landmarks[index];
-          if (landmark == null) continue;
+        double x = (landmark.x / imageSize.width) * screenSize.width;
+        double y = (landmark.y / imageSize.height) * screenSize.height;
 
-          double x = (landmark.x / imageSize.width) * screenSize.width;
-          double y = (landmark.y / imageSize.height) * screenSize.height;
+        final dx = x - centerX;
+        final dy = y - centerY;
 
-          final dx = x - centerX;
-          final dy = y - centerY;
+        final rotatedX = -dy + centerX - 100;
+        final rotatedY = dx + centerY - 80;
 
-          final rotatedX = -dy + centerX - 100;
-          final rotatedY = dx + centerY - 80;
+        canvas.drawCircle(Offset(rotatedX, rotatedY), 8, highlightPaint);
 
-          canvas.drawCircle(Offset(rotatedX, rotatedY), 8, highlightPaint);
+        final textPainter = TextPainter(
+          text: TextSpan(
+            text: '($index)',
+            style: const TextStyle(color: Colors.white, fontSize: 12),
+          ),
+          textDirection: TextDirection.ltr,
+        )..layout();
 
-          final textPainter = TextPainter(
-            text: TextSpan(
-              text: '($index)',
-              style: const TextStyle(color: Colors.white, fontSize: 12),
-            ),
-            textDirection: TextDirection.ltr,
-          )..layout();
-
-          textPainter.paint(canvas, Offset(rotatedX + 6, rotatedY - 14));
-        }
+        textPainter.paint(canvas, Offset(rotatedX + 6, rotatedY - 14));
       }
     }
   }
