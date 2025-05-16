@@ -238,7 +238,7 @@ class _ClothingSuggestionFormState extends State<ClothingSuggestionForm> {
 
   question += " What should I wear?";
 
-  final Uri url = Uri.parse('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSyD-eVhwXXfJd6p7cgS9cK7TRqagwX3lMJE');
+  final Uri url = Uri.parse('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=');
 
   try {
     final response = await http.post(
